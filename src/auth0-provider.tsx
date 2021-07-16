@@ -149,6 +149,10 @@ export interface Auth0ProviderOptions {
    */
   invitation?: string;
   /**
+   *
+   */
+  url?: string;
+  /**
    * If you need to send custom parameters to the Authorization Server,
    * make sure to use the original parameter name.
    */
@@ -223,6 +227,7 @@ const Auth0Provider = (opts: Auth0ProviderOptions): JSX.Element => {
   const {
     children,
     skipRedirectCallback,
+    url,
     onRedirectCallback = defaultOnRedirectCallback,
     ...clientOpts
   } = opts;
@@ -234,8 +239,9 @@ const Auth0Provider = (opts: Auth0ProviderOptions): JSX.Element => {
   useEffect(() => {
     (async (): Promise<void> => {
       try {
-        if (hasAuthParams() && !skipRedirectCallback) {
-          const { appState } = await client.handleRedirectCallback();
+        const params = url && new URL(url).search;
+        if (hasAuthParams(params) && !skipRedirectCallback) {
+          const { appState } = await client.handleRedirectCallback(url);
           onRedirectCallback(appState);
         } else {
           await client.checkSession();
@@ -246,7 +252,7 @@ const Auth0Provider = (opts: Auth0ProviderOptions): JSX.Element => {
         dispatch({ type: 'ERROR', error: loginError(error) });
       }
     })();
-  }, [client, onRedirectCallback, skipRedirectCallback]);
+  }, [client, onRedirectCallback, skipRedirectCallback, url]);
 
   const buildAuthorizeUrl = useCallback(
     (opts?: RedirectLoginOptions): Promise<string> =>
